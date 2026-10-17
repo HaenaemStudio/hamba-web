@@ -536,16 +536,27 @@ body {
     border-color: var(--primary);
 }
 
-.btn-login {
+.btn-google-login {
+    display: flex;
+    align-items: center;
+    justify-content: center;
     width: 100%;
-    padding: 12px;
+    padding: 13px 18px;
+    background: #ffffff;
+    color: #1f1f1f;
+    border: 1.5px solid #dadce0;
     border-radius: var(--radius-md);
-    background: var(--primary-gradient);
-    color: #fff;
     font-size: 15px;
     font-weight: 700;
-    border: none;
     cursor: pointer;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    transition: all 0.2s;
+}
+
+.btn-google-login:hover {
+    background: #f8f9fa;
+    border-color: #c6c9cc;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.12);
 }
 
 /* 토스트 메시지 */

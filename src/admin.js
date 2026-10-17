@@ -1,5 +1,7 @@
 /* src/admin.js - 함바여지도 관리자 콘솔 대시보드 로직 */
 import { HambaStorage } from './services/storage.js';
+import { auth, googleProvider } from './services/firebase.js';
+import { signInWithPopup, signOut, onAuthStateChanged } from 'firebase/auth';
 
 class AdminDashboard {
     constructor() {
@@ -23,44 +25,73 @@ class AdminDashboard {
         });
     }
 
-    /* 1. 관리자 비밀번호 인증 처리 (세션 유지) */
+    /* 1. 관리자 구글 2단계 보안 인증 처리 (공인 관리자 이메일만 허용) */
     initAuth() {
         const modal = document.getElementById('admin-login-modal');
-        const loginBtn = document.getElementById('btn-login-submit');
-        const pinInput = document.getElementById('admin-pin-input');
+        const googleLoginBtn = document.getElementById('btn-google-login');
+        const statusMsg = document.getElementById('auth-status-msg');
         const logoutBtn = document.getElementById('btn-admin-logout');
 
-        const isAuth = sessionStorage.getItem('hamba_admin_auth') === 'true';
-        if (isAuth) {
-            modal.style.display = 'none';
-        } else {
-            modal.style.display = 'flex';
-        }
+        // 공인된 관리자 이메일 화이트리스트
+        const ADMIN_EMAILS = [
+            'universen4@gmail.com'
+        ];
 
-        const handleLogin = () => {
-            const val = pinInput.value.trim();
-            // 기본 관리자 PIN: 1234
-            if (val === '1234' || val === 'admin1234') {
-                sessionStorage.setItem('hamba_admin_auth', 'true');
-                modal.style.display = 'none';
-                this.showToast('🔓 관리자 인증이 완료되었습니다.');
+        // Firebase Auth 상태 실시간 감지 (자동 로그인 세션 유지)
+        onAuthStateChanged(auth, (user) => {
+            if (user && user.email) {
+                const userEmail = user.email.toLowerCase();
+                if (ADMIN_EMAILS.includes(userEmail)) {
+                    modal.style.display = 'none';
+                    if (statusMsg) statusMsg.textContent = '';
+                } else {
+                    modal.style.display = 'flex';
+                    if (statusMsg) statusMsg.textContent = `❌ 접근 권한 없음: '${user.email}'은 등록된 관리자 이메일이 아닙니다.`;
+                    signOut(auth);
+                }
             } else {
-                alert('비밀번호가 올바르지 않습니다. (초기 비밀번호: 1234)');
-                pinInput.focus();
+                modal.style.display = 'flex';
             }
-        };
+        });
 
-        if (loginBtn) loginBtn.addEventListener('click', handleLogin);
-        if (pinInput) {
-            pinInput.addEventListener('keydown', (e) => {
-                if (e.key === 'Enter') handleLogin();
+        // 구글 로그인 팝업 버튼 클릭 핸들러
+        if (googleLoginBtn) {
+            googleLoginBtn.addEventListener('click', async () => {
+                try {
+                    if (statusMsg) statusMsg.textContent = 'Google 인증 창을 여는 중...';
+                    const result = await signInWithPopup(auth, googleProvider);
+                    const user = result.user;
+                    const email = user?.email?.toLowerCase();
+
+                    if (ADMIN_EMAILS.includes(email)) {
+                        modal.style.display = 'none';
+                        if (statusMsg) statusMsg.textContent = '';
+                        this.showToast(`🔓 ${user.displayName || email} 관리자님 인증 완료!`);
+                        this.renderTable();
+                        this.renderReviewTable();
+                    } else {
+                        if (statusMsg) statusMsg.textContent = `❌ 접근 권한 없음: '${user.email}'은 관리자가 아닙니다.`;
+                        await signOut(auth);
+                        alert(`접근 권한이 없습니다. (${user.email})\n관리자 전용 구글 계정으로 로그인해 주세요.`);
+                    }
+                } catch (error) {
+                    console.error('Google Auth Error:', error);
+                    if (error.code === 'auth/popup-closed-by-user') {
+                        if (statusMsg) statusMsg.textContent = '인증 창이 닫혔습니다.';
+                    } else if (error.code === 'auth/unauthorized-domain') {
+                        if (statusMsg) statusMsg.textContent = 'Firebase 승인된 도메인에 현재 사이트가 등록되지 않았습니다.';
+                    } else {
+                        if (statusMsg) statusMsg.textContent = `인증 오류: ${error.message}`;
+                    }
+                }
             });
         }
 
+        // 로그아웃 버튼 핸들러
         if (logoutBtn) {
-            logoutBtn.addEventListener('click', () => {
+            logoutBtn.addEventListener('click', async () => {
                 if (confirm('관리자 세션을 종료하시겠습니까?')) {
-                    sessionStorage.removeItem('hamba_admin_auth');
+                    await signOut(auth);
                     window.location.reload();
                 }
             });

@@ -1,6 +1,7 @@
-// src/services/firebase.js - Firebase 및 Cloud Firestore 초기화
+// src/services/firebase.js - Firebase, Firestore, Authentication 초기화
 import { initializeApp } from 'firebase/app';
 import { getFirestore } from 'firebase/firestore';
+import { getAuth, GoogleAuthProvider } from 'firebase/auth';
 
 const firebaseConfig = {
   apiKey: "AIzaSyB7JGgRkWIbWCXuyQaNwVwwlJKXddEkj5o",
@@ -12,6 +13,12 @@ const firebaseConfig = {
   measurementId: "G-Z3082R859W"
 };
 
-// Firebase 앱 및 Firestore 인스턴스 초기화
+// Firebase 앱 인스턴스 초기화
 export const app = initializeApp(firebaseConfig);
+
+// Cloud Firestore 인스턴스 초기화
 export const db = getFirestore(app);
+
+// Authentication & Google Provider 초기화
+export const auth = getAuth(app);
+export const googleProvider = new GoogleAuthProvider();
