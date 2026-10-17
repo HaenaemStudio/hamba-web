@@ -117,6 +117,7 @@
     bottom: 24px;
     display: flex;
     flex-direction: column;
+    align-items: flex-end;
     gap: 10px;
     z-index: 90;
     transition: bottom 0.35s cubic-bezier(0.1, 0.9, 0.2, 1);
@@ -321,11 +322,12 @@
     }
 
     .map-controls {
-        bottom: calc(52vh + 12px);
-        right: 12px;
+        bottom: calc(clamp(380px, 52vh, 440px) + 14px);
+        right: 14px;
     }
 
-    #list-panel.collapsed ~ .map-controls {
-        bottom: 70px;
+    #list-panel.collapsed ~ .map-controls,
+    .map-controls.panel-collapsed {
+        bottom: 72px;
     }
 }

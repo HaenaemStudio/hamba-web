@@ -141,13 +141,15 @@ class HambaWebApp {
         // 바텀 시트 열기/닫기 토글
         const listPanel = document.getElementById('list-panel');
         const handleBtn = document.getElementById('panel-handle');
-        const toggleBtn = document.getElementById('btn-toggle-panel');
-
         const togglePanel = () => {
             if (!listPanel) return;
-            listPanel.classList.toggle('collapsed');
+            const isCollapsed = listPanel.classList.toggle('collapsed');
             if (toggleBtn) {
-                toggleBtn.textContent = listPanel.classList.contains('collapsed') ? '목록 열기' : '목록 닫기';
+                toggleBtn.textContent = isCollapsed ? '목록 열기' : '목록 닫기';
+            }
+            const mapControls = document.querySelector('.map-controls');
+            if (mapControls) {
+                mapControls.classList.toggle('panel-collapsed', isCollapsed);
             }
         };
 

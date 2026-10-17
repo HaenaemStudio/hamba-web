@@ -103,28 +103,10 @@
         <button class="header-btn" id="btn-open-add" title="식당 제보하기">
             <span style="font-size:18px;">📢</span>
         </button>
-
-        <a href="/admin.html" class="header-btn" title="관리자 콘솔 (Admin)" style="text-decoration:none; display:flex; align-items:center; justify-content:center;">
-            <span style="font-size:16px;">⚙️</span>
-        </a>
     </header>
 
     <!-- 3. 메인 카카오 지도 -->
     <div id="map-container"></div>
-
-    <!-- 지도 조작 플로팅 버튼 -->
-    <div class="map-controls">
-        <button class="map-control-btn" id="btn-my-location" title="내 위치 찾기">
-            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
-                <circle cx="12" cy="12" r="3"></circle>
-                <path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path>
-            </svg>
-        </button>
-        <button class="map-control-btn primary-btn fab-report" id="btn-fab-add" title="식당 제보하기">
-            <span style="font-size:18px;">📢</span>
-            <span class="fab-text">제보하기</span>
-        </button>
-    </div>
 
     <!-- 4. 하단 바텀 시트 (식당 리스트) -->
     <div id="list-panel">
@@ -155,6 +137,20 @@
         <div class="hamba-list" id="hamba-list">
             <!-- 동적 생성 -->
         </div>
+    </div>
+
+    <!-- 5. 지도 조작 플로팅 버튼 -->
+    <div class="map-controls">
+        <button class="map-control-btn" id="btn-my-location" title="내 위치 찾기">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path>
+            </svg>
+        </button>
+        <button class="map-control-btn primary-btn fab-report" id="btn-fab-add" title="식당 제보하기">
+            <span style="font-size:18px;">📢</span>
+            <span class="fab-text">제보하기</span>
+        </button>
     </div>
 
 </div>
