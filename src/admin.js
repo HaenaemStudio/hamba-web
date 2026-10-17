@@ -214,12 +214,6 @@ class AdminDashboard {
             btnExportJson.addEventListener('click', () => this.exportJson());
         }
 
-        // 소스코드 복사 (hambaList.js 영구 반영용)
-        const btnCopyCode = document.getElementById('btn-copy-code');
-        if (btnCopyCode) {
-            btnCopyCode.addEventListener('click', () => this.copyCodeForSource());
-        }
-
         // 탭 전환 (식당 목록 vs 리뷰 관리)
         const tabHambas = document.getElementById('tab-btn-hambas');
         const tabReviews = document.getElementById('tab-btn-reviews');
@@ -624,19 +618,6 @@ class AdminDashboard {
         downloadAnchor.click();
         downloadAnchor.remove();
         this.showToast("📥 전체 식당 백업 JSON 파일이 다운로드되었습니다.");
-    }
-
-    /* 11. 소스코드 복사 (hambaList.js / initialData.js 반영용) */
-    copyCodeForSource() {
-        const list = this.storage.getAllHambas();
-        const code = `/* src/data/initialData.js - 관리자 콘솔에서 내보낸 최신 식당 데이터 */\n\nexport const INITIAL_HAMBA_DATA = ${JSON.stringify(list, null, 4)};\n`;
-
-        navigator.clipboard.writeText(code).then(() => {
-            alert("📋 'INITIAL_HAMBA_DATA' 소스코드가 클립보드에 복사되었습니다!\n\n'src/data/initialData.js' 파일에 붙여넣기 하시면 Git 커밋 및 영구 기본 데이터로 저장됩니다.");
-            this.showToast("📋 소스코드가 클립보드에 복사되었습니다!");
-        }).catch(() => {
-            prompt("아래 코드를 복사하여 'src/data/initialData.js'에 붙여넣으세요:", code);
-        });
     }
 
     /* 12. 토스트 팝업 */
