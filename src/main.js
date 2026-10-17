@@ -141,6 +141,8 @@ class HambaWebApp {
         // 바텀 시트 열기/닫기 토글
         const listPanel = document.getElementById('list-panel');
         const handleBtn = document.getElementById('panel-handle');
+        const toggleBtn = document.getElementById('btn-toggle-panel');
+
         const togglePanel = () => {
             if (!listPanel) return;
             const isCollapsed = listPanel.classList.toggle('collapsed');
