@@ -1,0 +1,5 @@
+/* src/styles/main.css - 모듈화된 스타일시트 통합 인덱스 */
+@import './variables.css';
+@import './layout.css';
+@import './components.css';
+@import './modal.css';

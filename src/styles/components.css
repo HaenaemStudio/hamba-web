@@ -1,0 +1,163 @@
+/* src/styles/components.css - 마커 오버레이 및 식당 카드 스타일 */
+
+/* 지도 오버레이 (커스텀 인포윈도우) */
+.custom-overlay {
+    background: var(--surface);
+    border-radius: var(--radius-md);
+    padding: 8px 12px;
+    box-shadow: var(--shadow-lg);
+    border: 2px solid var(--primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    white-space: nowrap;
+    cursor: pointer;
+    transform: translateY(-15px);
+}
+
+.custom-overlay .title {
+    font-weight: 700;
+    font-size: 13px;
+    color: var(--text-primary);
+}
+
+.custom-overlay .price {
+    font-weight: 800;
+    font-size: 13px;
+    color: var(--primary);
+}
+
+/* 식당 아이템 카드 */
+.hamba-card {
+    display: flex;
+    gap: 12px;
+    padding: 10px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    background: var(--surface);
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.hamba-card:hover {
+    border-color: var(--primary);
+    box-shadow: var(--shadow-sm);
+    transform: translateY(-2px);
+}
+
+.card-img {
+    width: 78px;
+    height: 78px;
+    border-radius: var(--radius-sm);
+    object-fit: cover;
+    background: var(--bg-main);
+    flex-shrink: 0;
+}
+
+.card-info {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+}
+
+.card-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+}
+
+.card-name {
+    font-size: 16px;
+    font-weight: 700;
+    color: var(--text-primary);
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+
+.card-badge-category {
+    display: inline-block;
+    font-size: 11px;
+    font-weight: 700;
+    padding: 2px 7px;
+    border-radius: 6px;
+    background: var(--primary-light);
+    color: var(--primary);
+    border: 1px solid rgba(241, 90, 36, 0.2);
+    vertical-align: middle;
+    white-space: nowrap;
+}
+
+.detail-category-badge {
+    display: inline-block;
+    font-size: 12px;
+    font-weight: 700;
+    padding: 3px 8px;
+    border-radius: 6px;
+    background: var(--primary-light);
+    color: var(--primary);
+    margin-left: 8px;
+    vertical-align: middle;
+}
+
+.category-tags {
+    display: flex;
+    gap: 6px;
+    overflow-x: auto;
+    padding: 2px 0 8px 0;
+    scrollbar-width: none;
+}
+.category-tags::-webkit-scrollbar {
+    display: none;
+}
+
+.bookmark-btn {
+    border: none;
+    background: transparent;
+    cursor: pointer;
+    color: var(--text-muted);
+    font-size: 18px;
+    transition: var(--transition);
+}
+
+.bookmark-btn.active {
+    color: #FF3B30;
+}
+
+.card-address {
+    font-size: 13px;
+    color: var(--text-muted);
+    margin-top: 2px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+
+.card-meta {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-top: 6px;
+    font-size: 13px;
+}
+
+.meta-rating {
+    display: flex;
+    align-items: center;
+    gap: 3px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.meta-rating svg {
+    fill: var(--star-color);
+    width: 14px;
+    height: 14px;
+}
+
+.meta-price {
+    font-weight: 800;
+    color: var(--primary);
+}

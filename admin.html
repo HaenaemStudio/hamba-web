@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>함바여지도 | 관리자 콘솔</title>
+    <link rel="icon" type="image/png" href="/favicon.png">
+    
+    <!-- 카카오 지도 JS SDK (장소 키워드 검색용) -->
+    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=0bc35e48789c2aa75262ce76f3201e30&libraries=services&autoload=false"></script>
+
+    <!-- 관리자 스타일시트 -->
+    <link rel="stylesheet" href="/src/styles/admin.css">
+</head>
+<body>
+
+    <!-- 1. 관리자 상단 네비게이션 -->
+    <header class="admin-navbar">
+        <a href="/admin.html" class="admin-brand">
+            <img src="/favicon.png" alt="로고" class="admin-logo">
+            <div class="admin-title-group">
+                <h1>
+                    <span>함바여지도</span>
+                    <span class="admin-badge">ADMIN CONSOLE</span>
+                </h1>
+            </div>
+        </a>
+
+        <div class="admin-nav-actions">
+            <a href="/" class="btn-nav primary" title="사용자 지도 서비스로 이동">
+                <span>🗺️</span>
+                <span>지도 서비스 바로가기</span>
+            </a>
+            <button class="btn-nav" id="btn-copy-code" title="hambaList.js 소스코드 복사">
+                <span>📋</span>
+                <span>소스코드 복사</span>
+            </button>
+            <button class="btn-nav" id="btn-export-json" title="전체 식당 데이터 JSON 백업">
+                <span>📥</span>
+                <span>JSON 백업</span>
+            </button>
+            <button class="btn-nav" id="btn-admin-logout" title="관리자 로그아웃">
+                <span>🔒</span>
+                <span>로그아웃</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- 2. 메인 컨테이너 (좌: 등록 폼, 우: 목록 관리) -->
+    <main class="admin-container">
+        
+        <!-- 좌측: 식당 등록 / 수정 카드 -->
+        <section class="admin-card">
+            <div class="card-header">
+                <span class="card-title" id="form-card-title">🥘 신규 식당 등록 (제보 반영)</span>
+            </div>
+            <div class="card-body">
+                <form id="hamba-admin-form">
+                    
+                    <div class="form-group">
+                        <label class="form-label">식당 이름 *</label>
+                        <input type="text" class="form-input" id="form-name" placeholder="예: 해냄 한식 뷔페" required>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">음식 카테고리 *</label>
+                        <select class="form-input" id="form-category" required>
+                            <option value="한식" selected>한식</option>
+                            <option value="중식">중식</option>
+                            <option value="일식">일식</option>
+                            <option value="양식">양식</option>
+                            <option value="호텔">호텔</option>
+                            <option value="종합">종합</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="position:relative;">
+                        <label class="form-label">식당 주소 (카카오 장소 검색 연동) *</label>
+                        <input type="text" class="form-input" id="form-address" placeholder="예: 삼성, 강남, 도로명 주소 입력..." autocomplete="off" required>
+                        <!-- 검색 드롭다운 -->
+                        <div class="search-dropdown" id="address-dropdown"></div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">위도 (Latitude)</label>
+                            <input type="number" step="any" class="form-input" id="form-lat" value="37.5665" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">경도 (Longitude)</label>
+                            <input type="number" step="any" class="form-input" id="form-lng" value="126.9780" required>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">점심 가격(원) *</label>
+                            <input type="number" class="form-input" id="form-lunch-price" value="7000" required>
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">저녁 가격(원)</label>
+                            <input type="number" class="form-input" id="form-dinner-price" value="7000">
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label">오픈 시간</label>
+                            <input type="time" class="form-input" id="form-open-time" value="06:00">
+                        </div>
+                        <div class="form-group">
+                            <label class="form-label">마감 시간</label>
+                            <input type="time" class="form-input" id="form-close-time" value="19:00">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">식당 대표 사진 첨부 (메일 수신 사진)</label>
+                        <input type="file" id="form-image-file" accept="image/*" style="display:none;">
+                        <div class="image-upload-box" id="image-upload-box">
+                            <div id="upload-placeholder">
+                                <span style="font-size:24px; display:block; margin-bottom:4px;">📷</span>
+                                <span style="font-size:13px; font-weight:700; color:var(--text-secondary);">클릭하여 사진 첨부 (최대 8MB)</span>
+                            </div>
+                            <div class="upload-preview-container" id="upload-preview-container">
+                                <img id="preview-image" src="" alt="미리보기">
+                                <button type="button" class="btn-remove-preview" id="btn-remove-preview">✕</button>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">또는 직접 이미지 웹 URL 입력 (선택)</label>
+                        <input type="url" class="form-input" id="form-image-url" placeholder="https://images.unsplash.com/...">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label">식당 설명 및 주요 메뉴</label>
+                        <textarea class="form-textarea" id="form-description" rows="3" placeholder="예: 매일 바뀌는 12가지 한식 반찬과 직화 제육볶음 제공!"></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-submit" id="btn-submit-form">➕ 식당 정식 등록하기</button>
+                    <button type="button" class="btn-cancel-edit" id="btn-cancel-edit">취소하고 신규 등록 모드로 복귀</button>
+                </form>
+            </div>
+        </section>
+
+        <!-- 우측: 등록된 식당 및 리뷰 관리 카드 -->
+        <section class="admin-card">
+            <div class="card-header">
+                <div class="card-tabs">
+                    <button class="card-tab-btn active" id="tab-btn-hambas">
+                        <span>📋 식당 목록</span>
+                        <span class="tab-badge" id="total-hamba-count">0개</span>
+                    </button>
+                    <button class="card-tab-btn" id="tab-btn-reviews">
+                        <span>💬 방문자 리뷰 관리</span>
+                        <span class="tab-badge" id="total-review-count">0개</span>
+                    </button>
+                </div>
+            </div>
+            <div class="card-body">
+                
+                <!-- 1. 식당 목록 관리 뷰 -->
+                <div id="view-hamba-management">
+                    <div class="list-filter-bar">
+                        <input type="text" class="search-list-input" id="search-table-input" placeholder="식당명 또는 주소로 실시간 검색...">
+                    </div>
+
+                    <div class="hamba-table-wrapper">
+                        <table class="hamba-table">
+                            <thead>
+                                <tr>
+                                    <th>사진</th>
+                                    <th>카테고리</th>
+                                    <th>식당명 / 주소</th>
+                                    <th>점심 가격</th>
+                                    <th>영업 시간</th>
+                                    <th>평점</th>
+                                    <th>관리</th>
+                                </tr>
+                            </thead>
+                            <tbody id="hamba-table-body">
+                                <!-- 동적 렌더링 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+                <!-- 2. 방문자 리뷰 관리 뷰 -->
+                <div id="view-review-management" style="display: none;">
+                    <div class="list-filter-bar">
+                        <input type="text" class="search-list-input" id="search-review-input" placeholder="식당명, 작성자, 리뷰 내용으로 검색...">
+                    </div>
+
+                    <div class="hamba-table-wrapper">
+                        <table class="hamba-table">
+                            <thead>
+                                <tr>
+                                    <th>식당명</th>
+                                    <th>작성자</th>
+                                    <th>별점</th>
+                                    <th>리뷰 내용</th>
+                                    <th>작성 일시</th>
+                                    <th>관리</th>
+                                </tr>
+                            </thead>
+                            <tbody id="review-table-body">
+                                <!-- 동적 렌더링 -->
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+    </main>
+
+    <!-- 3. 관리자 비밀번호 인증 모달 -->
+    <div class="login-modal-overlay" id="admin-login-modal">
+        <div class="login-card">
+            <div class="login-card-icon">🔐</div>
+            <h2>관리자 인증</h2>
+            <p>관리자 비밀번호를 입력해 주세요.<br><span style="color:var(--primary); font-weight:700;">(기본 비밀번호: 1234)</span></p>
+            <input type="password" class="login-input" id="admin-pin-input" placeholder="••••" maxlength="8" autofocus>
+            <button class="btn-login" id="btn-login-submit">인증하기</button>
+        </div>
+    </div>
+
+    <!-- 4. 토스트 알림 메시지 -->
+    <div class="admin-toast" id="admin-toast"></div>
+
+    <!-- 스크립트 로드 -->
+    <script type="module" src="/src/admin.js"></script>
+</body>
+</html>

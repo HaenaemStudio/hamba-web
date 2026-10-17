@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>함바여지도 | 전용 웹 지도 서비스</title>
+    <meta name="description" content="전국 숨은 함바집과 가성비 최고의 한식 뷔페를 지도로 쉽고 빠르게 찾아보세요!">
+
+    <!-- 파비콘 설정 -->
+    <link rel="icon" type="image/png" href="/favicon.png">
+
+    <!-- 전역 통합 스타일시트 (FOUC 방지 위해 head에서 로드) -->
+    <link rel="stylesheet" href="/src/styles/main.css">
+
+    <!-- 초기 깜빡임 방지 인라인 크리티컬 스타일 -->
+    <style>
+        html, body {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: #F15A24;
+        }
+        #splash-screen {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: linear-gradient(135deg, #F15A24 0%, #FF7A45 100%);
+            z-index: 9999;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #FFFFFF;
+        }
+        .splash-icon {
+            width: 110px;
+            height: 110px;
+            background: #FFFFFF;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 12px 30px rgba(0,0,0,0.15);
+            margin-bottom: 20px;
+            overflow: hidden;
+        }
+        .splash-icon img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 50%;
+        }
+    </style>
+
+    <!-- 카카오 지도 JS SDK (JavaScript 앱 키: 0bc35e48789c2aa75262ce76f3201e30) -->
+    <script type="text/javascript" src="https://dapi.kakao.com/v2/maps/sdk.js?appkey=0bc35e48789c2aa75262ce76f3201e30&libraries=services&autoload=false"></script>
+</head>
+<body>
+
+<div id="app-container">
+
+    <!-- 1. 스플래시 로딩 화면 -->
+    <div id="splash-screen">
+        <div class="splash-logo-container">
+            <div class="splash-icon">
+                <img src="/logo.png" alt="함바여지도 로고" width="110" height="110">
+            </div>
+            <div class="splash-title">함바여지도</div>
+            <div class="splash-subtitle">전국 가성비 한식 뷔페 & 함바집 지도</div>
+        </div>
+        <div class="splash-loader"></div>
+    </div>
+
+    <!-- 2. 상단 네비게이션 헤더 -->
+    <header class="app-header">
+        <div class="header-brand" id="brand-home">
+            <div class="header-logo">
+                <img src="/logo.png" alt="함바여지도" width="32" height="32" style="width:100%; height:100%; border-radius:50%; object-fit:cover;">
+            </div>
+            <div class="header-title">함바여지도</div>
+        </div>
+
+        <div class="header-search-box">
+            <input type="text" id="search-input" placeholder="식당 이름, 지역, 메뉴 검색...">
+        </div>
+
+        <button class="header-btn" id="btn-open-filter" title="검색 필터">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <polygon points="22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3"></polygon>
+            </svg>
+        </button>
+
+        <button class="header-btn" id="btn-favorite-only" title="즐겨찾기 모아보기">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M20.84 4.61a5.5 5.5 0 0 0-7.78 0L12 5.67l-1.06-1.06a5.5 5.5 0 0 0-7.78 7.78l1.06 1.06L12 21.23l7.78-7.78 1.06-1.06a5.5 5.5 0 0 0 0-7.78z"></path>
+            </svg>
+        </button>
+
+        <button class="header-btn" id="btn-open-add" title="식당 제보하기">
+            <span style="font-size:18px;">📢</span>
+        </button>
+
+        <a href="/admin.html" class="header-btn" title="관리자 콘솔 (Admin)" style="text-decoration:none; display:flex; align-items:center; justify-content:center;">
+            <span style="font-size:16px;">⚙️</span>
+        </a>
+    </header>
+
+    <!-- 3. 메인 카카오 지도 -->
+    <div id="map-container"></div>
+
+    <!-- 지도 조작 플로팅 버튼 -->
+    <div class="map-controls">
+        <button class="map-control-btn" id="btn-my-location" title="내 위치 찾기">
+            <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M12 2v3M12 19v3M2 12h3M19 12h3"></path>
+            </svg>
+        </button>
+        <button class="map-control-btn primary-btn fab-report" id="btn-fab-add" title="식당 제보하기">
+            <span style="font-size:18px;">📢</span>
+            <span class="fab-text">제보하기</span>
+        </button>
+    </div>
+
+    <!-- 4. 하단 바텀 시트 (식당 리스트) -->
+    <div id="list-panel">
+        <div class="panel-drag-handle" id="panel-handle">
+            <div class="drag-bar"></div>
+        </div>
+
+        <div class="panel-header">
+            <div class="panel-title-group">
+                <span class="panel-title">주변 함바집 & 뷔페</span>
+                <span class="panel-count" id="hamba-count">0개</span>
+            </div>
+            <button class="tag-btn" id="btn-toggle-panel">목록 닫기</button>
+        </div>
+
+        <!-- 카테고리 필터 태그 -->
+        <div class="category-tags" id="category-filter-bar">
+            <button class="tag-btn active" data-category="ALL">전체</button>
+            <button class="tag-btn" data-category="한식">한식</button>
+            <button class="tag-btn" data-category="중식">중식</button>
+            <button class="tag-btn" data-category="일식">일식</button>
+            <button class="tag-btn" data-category="양식">양식</button>
+            <button class="tag-btn" data-category="호텔">호텔</button>
+            <button class="tag-btn" data-category="종합">종합</button>
+        </div>
+
+        <!-- 리스트 컨테이너 -->
+        <div class="hamba-list" id="hamba-list">
+            <!-- 동적 생성 -->
+        </div>
+    </div>
+
+</div>
+
+<!-- 5. 모달 레이어 -->
+
+<!-- 5-1. 식당 상세 정보 모달 -->
+<div class="modal-overlay" id="modal-detail">
+    <div class="modal-card">
+        <div class="modal-header">
+            <span class="modal-title" id="detail-name">식당 상세 정보</span>
+            <button class="close-btn" data-close="modal-detail">&times;</button>
+        </div>
+        <div class="modal-body">
+            <img src="" id="detail-image" class="detail-banner" alt="식당 대표 이미지">
+
+            <div class="detail-section">
+                <div class="detail-info-row">
+                    <div style="display:flex; align-items:center;">
+                        <span style="font-size:20px; font-weight:800; color:var(--text-primary);" id="detail-title">식당명</span>
+                        <span class="detail-category-badge" id="detail-category">한식</span>
+                    </div>
+                    <button class="bookmark-btn" id="detail-bookmark" title="즐겨찾기">♥</button>
+                </div>
+                <div class="detail-info-row" style="color:var(--text-muted); font-size:13.5px;" id="detail-address">주소 정보</div>
+            </div>
+
+            <div class="detail-section" style="background:var(--bg-main); padding:14px; border-radius:var(--radius-md);">
+                <div class="detail-info-row">
+                    <span class="detail-section-title" style="margin:0; min-width:80px;">점심 가격:</span>
+                    <span style="font-weight:800; color:var(--primary);" id="detail-lunch-price">0원</span>
+                </div>
+                <div class="detail-info-row">
+                    <span class="detail-section-title" style="margin:0; min-width:80px;">저녁 가격:</span>
+                    <span style="font-weight:800; color:var(--primary);" id="detail-dinner-price">0원</span>
+                </div>
+                <div class="detail-info-row">
+                    <span class="detail-section-title" style="margin:0; min-width:80px;">영업 시간:</span>
+                    <span id="detail-hours">06:00 - 19:30</span>
+                </div>
+            </div>
+
+            <div class="detail-section" style="margin-top:16px;">
+                <div class="detail-section-title">식당 소개</div>
+                <p id="detail-desc" style="font-size:14px; line-height:1.6; color:var(--text-secondary);">설명이 들어갑니다.</p>
+            </div>
+
+            <!-- 리뷰 세션 -->
+            <div class="detail-section" style="margin-top:20px;">
+                <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:10px;">
+                    <div class="detail-section-title" style="margin:0;">방문 리뷰 (<span id="detail-review-count">0</span>)</div>
+                    <button class="tag-btn active" id="btn-write-review">+ 리뷰 작성</button>
+                </div>
+                <div id="detail-review-list" style="display:flex; flex-direction:column; gap:10px;">
+                    <!-- 리뷰 동적 노출 -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 5-2. 새 함바집 제보 모달 -->
+<div class="modal-overlay" id="modal-add">
+    <div class="modal-card">
+        <div class="modal-header">
+            <span class="modal-title">새로운 함바집 / 뷔페 제보하기</span>
+            <button class="close-btn" data-close="modal-add">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div style="background:var(--primary-light); color:var(--primary); padding:10px 14px; border-radius:var(--radius-md); font-size:13px; font-weight:600; margin-bottom:16px; display:flex; align-items:center; gap:8px;">
+                <span style="font-size:16px;">📢</span>
+                <span>알고 계신 맛있는 함바집을 제보해 주시면, 관리자 확인 후 지도에 등록됩니다!</span>
+            </div>
+
+            <!-- 네이티브 파일 첨부 전송용 가상 프레임 (페이지 새로고침 방지) -->
+            <iframe name="hidden_submit_iframe" id="hidden_submit_iframe" style="display:none; width:0; height:0; border:none;"></iframe>
+
+            <form id="form-add-hamba" action="https://formsubmit.co/universen4@gmail.com" method="POST" enctype="multipart/form-data" target="hidden_submit_iframe">
+                <input type="hidden" name="_subject" id="add-hidden-subject" value="[함바여지도 제보] 새로운 식당 등록 요청">
+                <input type="hidden" name="_template" value="table">
+                <input type="hidden" name="_captcha" value="false">
+                <input type="hidden" name="좌표 정보" id="add-hidden-coords" value="">
+                <input type="hidden" name="제보 일시" id="add-hidden-date" value="">
+
+                <div class="form-group">
+                    <label class="form-label">식당 이름 *</label>
+                    <input type="text" class="form-input" id="add-name" name="식당 이름" placeholder="예: 해냄 한식 뷔페" required>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">음식 카테고리 *</label>
+                    <select class="form-input" id="add-category" name="음식 카테고리" style="background:var(--surface);">
+                        <option value="한식" selected>한식</option>
+                        <option value="중식">중식</option>
+                        <option value="일식">일식</option>
+                        <option value="양식">양식</option>
+                        <option value="호텔">호텔</option>
+                        <option value="종합">종합</option>
+                    </select>
+                </div>
+
+                <div class="form-group" style="position:relative;">
+                    <label class="form-label">주소 또는 위치 검색 *</label>
+                    <div style="position:relative;">
+                        <input type="text" class="form-input" id="add-address" name="식당 주소" placeholder="예: 삼성, 강남, 또는 도로명 주소 입력 시 자동완성..." autocomplete="off" required>
+                        <span id="address-search-status" style="position:absolute; right:12px; top:50%; transform:translateY(-50%); font-size:13px; color:var(--primary); pointer-events:none;">🔍</span>
+                    </div>
+                    <!-- 카카오 지도 연동 장소 검색 드롭다운 -->
+                    <div id="address-dropdown" style="display:none; position:absolute; top:calc(100% + 4px); left:0; right:0; background:var(--surface); border:1.5px solid var(--primary); border-radius:var(--radius-md); box-shadow:0 10px 28px rgba(0,0,0,0.18); max-height:220px; overflow-y:auto; z-index:1050;">
+                    </div>
+                </div>
+
+                <div class="form-group" style="display:flex; gap:10px;">
+                    <div style="flex:1;">
+                        <label class="form-label">점심 가격(원) *</label>
+                        <input type="number" class="form-input" id="add-lunch-price" name="점심 가격" value="7000" placeholder="7000" required>
+                    </div>
+                    <div style="flex:1;">
+                        <label class="form-label">저녁 가격(원)</label>
+                        <input type="number" class="form-input" id="add-dinner-price" name="저녁 가격" value="7000" placeholder="7000">
+                    </div>
+                </div>
+
+                <div class="form-group" style="display:flex; gap:10px;">
+                    <div style="flex:1;">
+                        <label class="form-label">오픈 시간</label>
+                        <input type="time" class="form-input" id="add-open-time" name="오픈 시간" value="06:00">
+                    </div>
+                    <div style="flex:1;">
+                        <label class="form-label">마감 시간</label>
+                        <input type="time" class="form-input" id="add-close-time" name="마감 시간" value="19:00">
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">식당 사진 첨부 (선택)</label>
+                    <input type="file" id="add-image-file" name="attachment" accept="image/*" style="display:none;">
+                    <div id="image-upload-trigger" style="border:2px dashed var(--border-color); border-radius:var(--radius-md); padding:16px; text-align:center; cursor:pointer; background:var(--bg-main); transition:var(--transition);">
+                        <div id="upload-placeholder">
+                            <span style="font-size:24px; display:block; margin-bottom:4px;">📷</span>
+                            <span style="font-size:13px; font-weight:700; color:var(--text-secondary);">클릭하여 식당/메뉴 사진 첨부</span>
+                            <span style="font-size:11.5px; color:var(--text-muted); display:block; margin-top:2px;">(JPG, PNG 파일 지원)</span>
+                        </div>
+                        <div id="upload-preview" style="display:none; position:relative;">
+                            <img id="preview-img" src="" alt="미리보기" style="max-height:160px; max-width:100%; border-radius:var(--radius-sm); object-fit:cover; display:block; margin:0 auto;">
+                            <button type="button" id="btn-remove-image" style="position:absolute; top:4px; right:4px; background:rgba(0,0,0,0.65); color:#fff; border:none; border-radius:50%; width:24px; height:24px; font-size:12px; cursor:pointer; display:flex; align-items:center; justify-content:center;">✕</button>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label">식당 설명 및 주요 메뉴</label>
+                    <textarea class="form-textarea" id="add-description" name="식당 소개 및 주요 메뉴" rows="3" placeholder="예: 매일 바뀌는 10가지 한식 반찬과 직화 제육볶음 제공!"></textarea>
+                </div>
+            </form>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" data-close="modal-add">취소</button>
+            <button class="btn btn-primary" id="btn-submit-add">전송하기</button>
+        </div>
+    </div>
+</div>
+
+<!-- 5-3. 필터 설정 모달 -->
+<div class="modal-overlay" id="modal-filter">
+    <div class="modal-card">
+        <div class="modal-header">
+            <span class="modal-title">검색 조건 필터</span>
+            <button class="close-btn" data-close="modal-filter">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">음식 카테고리</label>
+                <select class="form-select" id="filter-category-select">
+                    <option value="ALL">전체 카테고리</option>
+                    <option value="한식">한식</option>
+                    <option value="중식">중식</option>
+                    <option value="일식">일식</option>
+                    <option value="양식">양식</option>
+                    <option value="호텔">호텔</option>
+                    <option value="종합">종합</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">가격대 선택</label>
+                <select class="form-select" id="filter-price-select">
+                    <option value="ALL">전체 가격대</option>
+                    <option value="UNDER_10K">1만원 이하 (가성비 추천)</option>
+                    <option value="RANGE_10K_20K">1만원 ~ 2만원</option>
+                    <option value="OVER_20K">2만원 이상</option>
+                </select>
+            </div>
+
+            <div class="form-group">
+                <label class="form-label">최소 평점 (별점)</label>
+                <select class="form-select" id="filter-rating-select">
+                    <option value="0">전체 평점</option>
+                    <option value="4.5">★ 4.5 이상 (최고 평점)</option>
+                    <option value="4.0">★ 4.0 이상</option>
+                    <option value="3.5">★ 3.5 이상</option>
+                </select>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" id="btn-reset-filter">초기화</button>
+            <button class="btn btn-primary" id="btn-apply-filter">필터 적용하기</button>
+        </div>
+    </div>
+</div>
+
+<!-- 5-4. 리뷰 작성 모달 -->
+<div class="modal-overlay" id="modal-review">
+    <div class="modal-card">
+        <div class="modal-header">
+            <span class="modal-title">리뷰 남기기</span>
+            <button class="close-btn" data-close="modal-review">&times;</button>
+        </div>
+        <div class="modal-body">
+            <div class="form-group">
+                <label class="form-label">별점 평가</label>
+                <select class="form-select" id="review-rating">
+                    <option value="5">★★★★★ (5.0) 최고의 맛!</option>
+                    <option value="4">★★★★☆ (4.0) 아주 맛있어요</option>
+                    <option value="3">★★★☆☆ (3.0) 무난해요</option>
+                    <option value="2">★★☆☆☆ (2.0) 조금 아쉬워요</option>
+                    <option value="1">★☆☆☆☆ (1.0) 추천하지 않아요</option>
+                </select>
+            </div>
+            <div class="form-group">
+                <label class="form-label">작성자 이름</label>
+                <input type="text" class="form-input" id="review-author" placeholder="닉네임 (예: 맛집탐험가)">
+            </div>
+            <div class="form-group">
+                <label class="form-label">리뷰 내용</label>
+                <textarea class="form-textarea" id="review-content" rows="3" placeholder="식당의 맛, 반찬 종류, 분위기에 대해 적어주세요!"></textarea>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <button class="btn btn-secondary" data-close="modal-review">취소</button>
+            <button class="btn btn-primary" id="btn-submit-review">리뷰 등록</button>
+        </div>
+    </div>
+</div>
+
+<!-- 6. 글로벌 토스트 메시지 -->
+<div id="toast">메시지 내용</div>
+
+<!-- 7. Vite ES Modules 메인 스크립트 진입점 -->
+<script type="module" src="/src/main.js"></script>
+
+</body>
+</html>
